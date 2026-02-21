@@ -1,0 +1,25 @@
+public interface IProviderStrategyResolver
+{
+    IProviderSelectionStrategy Resolve(string assistanceType);
+}
+
+public class ProviderStrategyResolver : IProviderStrategyResolver
+{
+    private readonly IEnumerable<IProviderSelectionStrategy> _strategies;
+
+    public ProviderStrategyResolver(IEnumerable<IProviderSelectionStrategy> strategies)
+    {
+        _strategies = strategies;
+    }
+
+    public IProviderSelectionStrategy Resolve(string assistanceType)
+    {
+        var strategy = _strategies
+            .FirstOrDefault(s => s.AssistanceType == assistanceType);
+
+        if (strategy is null)
+            throw new InvalidOperationException("No strategy found");
+
+        return strategy;
+    }
+}

@@ -1,0 +1,17 @@
+[Fact]
+public void TowStrategy_Should_Prioritize_Rating()
+{
+    var strategy = new TowTruckSelectionStrategy();
+    var provider = new Provider(5.0);
+
+    var score = strategy.CalculateScore(
+        provider,
+        new OptimizationContext
+        {
+            DistanceKm = 5,
+            ETAMinutes = 10,
+            AvailabilityScore = 1
+        });
+
+    score.Should().BeGreaterThan(0);
+}

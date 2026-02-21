@@ -1,0 +1,5 @@
+public interface IProviderSelectionStrategy
+{
+    string AssistanceType { get; }
+    double CalculateScore(Provider provider, OptimizationContext context);
+}

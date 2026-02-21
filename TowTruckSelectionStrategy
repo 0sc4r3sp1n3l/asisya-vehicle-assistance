@@ -1,0 +1,12 @@
+public class TowTruckSelectionStrategy : IProviderSelectionStrategy
+{
+    public string AssistanceType => "TOW";
+
+    public double CalculateScore(Provider provider, OptimizationContext context)
+    {
+        return (provider.Rating * 0.4)
+             + (context.AvailabilityScore * 0.2)
+             - (context.DistanceKm * 0.2)
+             - (context.ETAMinutes * 0.2);
+    }
+}

@@ -1,0 +1,12 @@
+public class BatterySelectionStrategy : IProviderSelectionStrategy
+{
+    public string AssistanceType => "BATTERY";
+
+    public double CalculateScore(Provider provider, OptimizationContext context)
+    {
+        return (provider.Rating * 0.3)
+             + (context.AvailabilityScore * 0.2)
+             - (context.DistanceKm * 0.1)
+             - (context.ETAMinutes * 0.4);
+    }
+}

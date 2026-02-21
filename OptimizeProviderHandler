@@ -1,0 +1,43 @@
+public class OptimizeProviderHandler 
+    : IRequestHandler<OptimizeProviderCommand, ProviderDto>
+{
+    private readonly IProviderRepository _repository;
+    private readonly IProviderStrategyResolver _resolver;
+
+    public OptimizeProviderHandler(
+        IProviderRepository repository,
+        IProviderStrategyResolver resolver)
+    {
+        _repository = repository;
+        _resolver = resolver;
+    }
+
+    public async Task<ProviderDto> Handle(
+        OptimizeProviderCommand request,
+        CancellationToken cancellationToken)
+    {
+        var providers = await _repository.GetAvailableAsync();
+
+        var strategy = _resolver.Resolve(request.AssistanceType);
+
+        var best = providers
+            .Select(p => new
+            {
+                Provider = p,
+                Score = strategy.CalculateScore(
+                    p,
+                    new OptimizationContext
+                    {
+                        DistanceKm = request.DistanceKm,
+                        ETAMinutes = request.ETAMinutes,
+                        AvailabilityScore = 1
+                    })
+            })
+            .OrderByDescending(x => x.Score)
+            .FirstOrDefault();
+
+        return best is null 
+            ? throw new Exception("No provider found")
+            : new ProviderDto(best.Provider.Id, best.Provider.Name);
+    }
+}

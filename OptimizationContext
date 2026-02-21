@@ -1,0 +1,6 @@
+public class OptimizationContext
+{
+    public double DistanceKm { get; init; }
+    public double ETAMinutes { get; init; }
+    public double AvailabilityScore { get; init; }
+}

@@ -1,0 +1,127 @@
+Falta de asincronía real
+Hallazgo
+Métodos marcados como async pero no usan await o realizan operaciones bloqueantes.
+Impacto
+•	Bloqueo de threads
+•	Mala escalabilidad bajo carga
+•	Thread starvation en producción
+Principio violado
+Asynchronous best practices (.NET scalability model)
+Solución
+public async Task<Provider> GetProviderAsync(Guid id)
+{
+    return await _context.Providers
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == id);
+}
+________________________________________
+Ausencia de transacciones
+Hallazgo
+Se actualiza proveedor y solicitud sin control transaccional.
+Riesgo
+Inconsistencia de datos si falla una operación.
+Principio violado
+ACID
+Solución
+await using var transaction = await _context.Database.BeginTransactionAsync();
+
+try
+{
+    // operaciones
+    await _context.SaveChangesAsync();
+    await transaction.CommitAsync();
+}
+catch
+{
+    await transaction.RollbackAsync();
+    throw;
+}
+________________________________________
+Error de concurrencia
+Hallazgo
+Dos solicitudes pueden asignar el mismo proveedor simultáneamente.
+Riesgo
+Doble asignación.
+Solución
+Agregar RowVersion:
+public byte[] RowVersion { get; set; }
+Configurar:
+builder.Property(p => p.RowVersion)
+       .IsRowVersion();
+________________________________________
+Lógica incorrecta
+Hallazgo
+Selección basada solo en el primer proveedor disponible.
+Impacto
+No cumple objetivo de “optimización inteligente”.
+Refactor
+Implementar Strategy Pattern (explicado anteriormente).
+________________________________________
+No hay validaciones
+Hallazgo
+No se validan parámetros de entrada.
+Riesgo
+Datos inválidos en base.
+Solución
+Usar FluentValidation:
+public class OptimizeCommandValidator 
+    : AbstractValidator<OptimizeProviderCommand>
+{
+    public OptimizeCommandValidator()
+    {
+        RuleFor(x => x.Latitude)
+            .InclusiveBetween(-90, 90);
+
+        RuleFor(x => x.Longitude)
+            .InclusiveBetween(-180, 180);
+
+        RuleFor(x => x.AssistanceType)
+            .NotEmpty();
+    }
+}
+________________________________________
+Violación de SOLID
+Hallazgo
+Clase con múltiples responsabilidades:
+•	Consulta base
+•	Lógica negocio
+•	Persistencia
+•	Selección
+Problema
+Código difícil de mantener.
+Refactor
+Separar en:
+•	Repository
+•	Strategy
+•	Handler
+•	DTO
+•	Domain entity
+________________________________________
+No uso de DTOs
+Hallazgo
+Se retornan entidades del dominio directamente.
+Riesgo
+Acoplamiento entre capas.
+Solución
+public record ProviderDto(
+    Guid Id,
+    string Name,
+    double Rating
+);
+________________________________________
+No hay política de selección configurable
+Hallazgo
+Pesos hardcodeados.
+Impacto
+No permite evolución del negocio.
+Mejora avanzada
+•	Strategy Pattern
+•	Feature flags
+•	Configuración en base de datos
+•	Versionado de algoritmo
+________________________________________
+
+Conclusión del Code Review
+
+El código presenta problemas de concurrencia, falta de transaccionalidad, ausencia de validaciones y violaciones a principios SOLID.
+Se propone una refactorización basada en Clean Architecture, Strategy Pattern y control de concurrencia optimista para garantizar escalabilidad, mantenibilidad y seguridad transaccional.
